@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Metastore Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Metastore Viewer</h1>
+    <form id="fileForm">
+        <label>Select a Parquet File:</label>
+        <select id="fileSelect">
+            {% for file in files %}
+                <option value="{{ file }}">{{ file }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Get Metadata</button>
+    </form>
+    <div id="output"></div>
+
+    <script>
+        document.getElementById("fileForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let fileName = document.getElementById("fileSelect").value;
+
+            fetch("/metadata", {
+                method: "POST",
+                body: new URLSearchParams({ file: fileName }),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("output").innerHTML = `<p>Error: ${data.error}</p>`;
+                } else {
+                    document.getElementById("output").innerHTML = `
+                        <h3>Metadata:</h3>
+                        <p><strong>Columns:</strong> ${data.columns.join(", ")}</p>
+                        <p><strong>Data Types:</strong> ${JSON.stringify(data.data_types)}</p>
+                        <p><strong>Row Count:</strong> ${data.row_count}</p>
+                    `;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
